@@ -375,13 +375,21 @@ macro(BUILD_OPS_C_SAMPLE Name Odd Others Extra Trid GenerateTest)
             target_link_libraries(${Name}_opencl ops_hdf5_seq ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES}  MPI::MPI_CXX)
         endif()
         install(TARGETS ${Name}_opencl DESTINATION ${APP_INSTALL_DIR}/${Name})
-            if ((OPS_TEST) AND (GPU_NUMBER GREATER_EQUAL 1) AND (${GenerateTest} STREQUAL "YES"))
+        if ((OPS_TEST) AND (GPU_NUMBER GREATER_EQUAL 1) AND (${GenerateTest} STREQUAL "YES"))
             set(args "OPS_CL_DEVICE=1 OPS_BLOCK_SIZE_X=512 OPS_BLOCK_SIZE_Y=1")
             add_test(NAME ${Name}_opencl
             COMMAND ${CMAKE_COMMAND} -DCMD=$<TARGET_FILE:${Name}_opencl>  -DARG=${args} -DOPS_INSTALL_PATH=${OPS_INSTALL_PATH}
             -P ${OPS_APP_SRC}/runtests.cmake
             WORKING_DIRECTORY "${TMP_SOURCE_DIR}"
             )
+            if (${CMAKE_CXX_COMPILER_ID} STREQUAL Intel)
+                set(args "OPS_CL_DEVICE=0 OPS_BLOCK_SIZE_X=512 OPS_BLOCK_SIZE_Y=1")
+                add_test(NAME ${Name}_opencl_cpu
+                COMMAND ${CMAKE_COMMAND} -DCMD=$<TARGET_FILE:${Name}_opencl>  -DARG=${args} -DOPS_INSTALL_PATH=${OPS_INSTALL_PATH}
+                -P ${OPS_APP_SRC}/runtests.cmake
+                WORKING_DIRECTORY "${TMP_SOURCE_DIR}"
+            )
+            endif ()
         endif()
     endif()
     if (MPI)
